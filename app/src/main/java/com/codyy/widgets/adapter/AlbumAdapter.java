@@ -5,14 +5,11 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 
 import com.codyy.widgets.R;
 import com.codyy.widgets.model.entities.PhotoInfo;
 import com.facebook.drawee.backends.pipeline.Fresco;
-import com.facebook.drawee.drawable.ProgressBarDrawable;
-import com.facebook.drawee.drawable.ScalingUtils;
-import com.facebook.drawee.generic.GenericDraweeHierarchy;
-import com.facebook.drawee.generic.GenericDraweeHierarchyBuilder;
 import com.facebook.drawee.interfaces.DraweeController;
 import com.facebook.drawee.view.SimpleDraweeView;
 import com.facebook.imagepipeline.common.ResizeOptions;
@@ -39,17 +36,9 @@ public class AlbumAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
     public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         switch (viewType) {
             case PhotoInfo.TYPE_CAMERA:
-
-                break;
+                return new CameraHolder(LayoutInflater.from(mContext).inflate(R.layout.adapter_album_camera, parent, false));
             case PhotoInfo.TYPE_PHOTO:
-//                GenericDraweeHierarchy gdh = new GenericDraweeHierarchyBuilder(mContext.getResources())
-//                        .setPlaceholderImage(mContext.getResources().getDrawable(R.drawable.ic_launcher))
-//                        .setFailureImage(mContext.getResources().getDrawable(R.drawable.ic_launcher))
-//                        .setProgressBarImage(new ProgressBarDrawable())
-//                        .setActualImageScaleType(ScalingUtils.ScaleType.CENTER)
-//                        .build();
-//                SimpleDraweeView simpleDraweeView = new SimpleDraweeView(mContext, gdh);
-                return new AlbumHolder(LayoutInflater.from(mContext).inflate(R.layout.activity_album_item, parent, false));
+                return new AlbumHolder(LayoutInflater.from(mContext).inflate(R.layout.adapter_album_item, parent, false));
         }
         return null;
     }
@@ -59,6 +48,7 @@ public class AlbumAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
 
         switch (getItemViewType(position)) {
             case PhotoInfo.TYPE_CAMERA:
+
                 break;
             case PhotoInfo.TYPE_PHOTO:
                 AlbumHolder albumHolder = (AlbumHolder) holder;
@@ -108,13 +98,14 @@ public class AlbumAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
      * 相机
      */
     class CameraHolder extends RecyclerView.ViewHolder {
-        SimpleDraweeView mSimpleDraweeView;
+        ImageView mCamera;
 
         public CameraHolder(View itemView) {
             super(itemView);
-            mSimpleDraweeView = (SimpleDraweeView) itemView.findViewById(R.id.simpledraweeview_item);
+            mCamera = (ImageView) itemView.findViewById(R.id.album_camera);
         }
-        void init(){
+
+        void init() {
         }
     }
 }

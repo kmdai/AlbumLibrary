@@ -88,6 +88,9 @@ public class AlbumActivity extends AppCompatActivity {
         @Override
         protected ArrayList<PhotoInfo> doInBackground(Integer... params) {
             ArrayList<PhotoInfo> photoInfos = new ArrayList<>();
+            PhotoInfo camera = new PhotoInfo();
+            camera.setType(PhotoInfo.TYPE_CAMERA);
+            photoInfos.add(camera);
             Uri externalContentUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
             String[] projection = {MediaStore.Images.Media._ID, MediaStore.Images.Media.DATA, MediaStore.Images.Media.DISPLAY_NAME, MediaStore.Images.Media.SIZE};
             Cursor cursor = null;
