@@ -98,14 +98,19 @@ public class AlbumAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
      * 相机
      */
     class CameraHolder extends RecyclerView.ViewHolder {
-        ImageView mCamera;
 
         public CameraHolder(View itemView) {
             super(itemView);
-            mCamera = (ImageView) itemView.findViewById(R.id.album_camera);
+            init();
         }
 
         void init() {
+            this.itemView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+
+                }
+            });
         }
     }
 }

@@ -60,31 +60,13 @@ public class AlbumActivity extends AppCompatActivity {
         }
     }
 
-    /**
-     * 粗略压缩
-     *
-     * @param path
-     * @return
-     */
-    @Deprecated
-    private Bitmap getFileBitmap(String path) {
-        File file = new File(path);
-        try {
-            BitmapFactory.Options bitmapOptions = new BitmapFactory.Options();
-            if (file.length() >= 1024 * 1024) {
-                bitmapOptions.inSampleSize = 8;
-            } else {
-                bitmapOptions.inSampleSize = 5;
-            }
-
-            return BitmapFactory.decodeStream(new FileInputStream(file), null, bitmapOptions);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
 
     class LocalData extends AsyncTask<Integer, Integer, ArrayList<PhotoInfo>> {
+        String mPicId = MediaStore.Images.Media._ID;
+        String mPicData = MediaStore.Images.Media.DATA;
+        String mPicName = MediaStore.Images.Media.DISPLAY_NAME;
+        String mPicSize = MediaStore.Images.Media.SIZE;
+
         @Override
         protected ArrayList<PhotoInfo> doInBackground(Integer... params) {
             ArrayList<PhotoInfo> photoInfos = new ArrayList<>();
@@ -92,21 +74,25 @@ public class AlbumActivity extends AppCompatActivity {
             camera.setType(PhotoInfo.TYPE_CAMERA);
             photoInfos.add(camera);
             Uri externalContentUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
-            String[] projection = {MediaStore.Images.Media._ID, MediaStore.Images.Media.DATA, MediaStore.Images.Media.DISPLAY_NAME, MediaStore.Images.Media.SIZE};
+            String[] projection = {mPicId, mPicData, mPicName, mPicSize};
             Cursor cursor = null;
             try {
                 cursor = getContentResolver().query(externalContentUri, projection, null, null, null);
                 String imageId;
                 Uri imageUri;
+                int idNmb = cursor.getColumnIndexOrThrow(mPicId);
+                int sizeNmb = cursor.getColumnIndex(mPicSize);
+                int dataNmb = cursor.getColumnIndex(mPicData);
+                int nameNmb = cursor.getColumnIndex(mPicName);
                 while (cursor.moveToNext()) {
-                    imageId = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID));
+                    imageId = cursor.getString(idNmb);
                     imageUri = Uri.withAppendedPath(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, imageId);
                     PhotoInfo photoInfo = new PhotoInfo();
                     photoInfo.setContent(imageUri);
                     photoInfo.setType(PhotoInfo.TYPE_PHOTO);
-                    photoInfo.setSize(cursor.getLong(cursor.getColumnIndex(MediaStore.Images.Media.SIZE)));
-                    photoInfo.setPath(cursor.getString(cursor.getColumnIndex(MediaStore.Images.Media.DATA)));
-                    photoInfo.setName(cursor.getString(cursor.getColumnIndex(MediaStore.Images.Media.DISPLAY_NAME)));
+                    photoInfo.setSize(cursor.getLong(sizeNmb));
+                    photoInfo.setPath(cursor.getString(dataNmb));
+                    photoInfo.setName(cursor.getString(nameNmb));
                     photoInfos.add(photoInfo);
                 }
             } finally {
