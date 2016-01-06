@@ -6,12 +6,23 @@
     android:background="#fff2f2f2"
     android:minHeight="120dp">
 
+
     <com.facebook.drawee.view.SimpleDraweeView
         android:id="@+id/simpledraweeview_item"
         android:layout_width="100dp"
         android:layout_height="100dp"
-        android:background="@android:color/white"
         android:layout_centerInParent="true"
-        app:actualImageScaleType="center"
+        android:background="@android:color/white"
+        app:actualImageScaleType="centerInside"
         app:placeholderImage="@drawable/ic_launcher" />
+
+    <TextView
+        android:layout_width="25dp"
+        android:layout_height="25dp"
+        android:layout_alignParentRight="true"
+        android:layout_marginRight="8dp"
+        android:layout_marginTop="8dp"
+        android:background="@drawable/photo_select"
+        android:gravity="center"
+        android:textColor="@android:color/white" />
 </RelativeLayout>

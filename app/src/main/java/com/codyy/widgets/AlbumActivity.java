@@ -34,7 +34,6 @@ import java.util.Date;
 
 public class AlbumActivity extends AppCompatActivity implements AlbumAdapter.TakePhoto {
     private RecyclerView mRecyclerView;
-    private ProgressDialog mProgressDialog;
     private ArrayList<PhotoInfo> mPhotoInfos;
     private AlbumAdapter mAlbumAdapter;
     private String mPhotoName;
@@ -75,16 +74,10 @@ public class AlbumActivity extends AppCompatActivity implements AlbumAdapter.Tak
     @Override
     public void takePhoto() {
         Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-        ContentValues contentValues = new ContentValues(2);
         SimpleDateFormat format = new SimpleDateFormat("yyyyMMddHHmmss");
         long createTime = System.currentTimeMillis();
         Date d1 = new Date(createTime);
         String t1 = format.format(d1);
-        System.out.println(t1);
-        contentValues.put(MediaStore.Images.Media.DISPLAY_NAME, t1 + ".jpg");
-        contentValues.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
-        contentValues.put(MediaStore.Images.Media.DATE_ADDED, System.currentTimeMillis());
-        Uri mPhotoUri = getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues);
         String cameraPath = AlbumActivity.IMAGE_BASE_PATH + "/Camera/";
         File file = new File(cameraPath);
         if (!file.exists()) {
@@ -98,21 +91,32 @@ public class AlbumActivity extends AppCompatActivity implements AlbumAdapter.Tak
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        System.out.println(requestCode);
         switch (requestCode) {
             case TAKE_PHOTO:
                 if (resultCode == Activity.RESULT_OK) {
-                    System.out.println(mPhotoName);
                     File file = new File(mPhotoName);
                     if (file.exists()) {
                         Intent mediaScanIntent = new Intent("android.intent.action.MEDIA_SCANNER_SCAN_FILE");
                         mediaScanIntent.setData(Uri.parse("file://" + mPhotoName));
                         sendBroadcast(mediaScanIntent);
-
-                        Toast.makeText(this, "ok", Toast.LENGTH_SHORT).show();
+                        PhotoInfo photoInfo = new PhotoInfo();
+                        photoInfo.setType(PhotoInfo.TYPE_PHOTO);
+                        photoInfo.setPath(mPhotoName);
+                        photoInfo.setContent(Uri.fromFile(file));
+                        photoInfo.setSize(file.length());
+                        mPhotoInfos.add(0, photoInfo);
+                        mAlbumAdapter.notifyDataSetChanged();
                     }
                 }
                 break;
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (mAlbumAdapter != null) {
+            mAlbumAdapter.shutDown();
         }
     }
 
@@ -126,9 +130,6 @@ public class AlbumActivity extends AppCompatActivity implements AlbumAdapter.Tak
         @Override
         protected ArrayList<PhotoInfo> doInBackground(Integer... params) {
             ArrayList<PhotoInfo> photoInfos = new ArrayList<>();
-            PhotoInfo camera = new PhotoInfo();
-            camera.setType(PhotoInfo.TYPE_CAMERA);
-            photoInfos.add(camera);
             Uri externalContentUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
             String[] projection = {mPicId, mPicData, mPicName, mPicSize, mDateAdd};
             Cursor cursor = null;
@@ -141,15 +142,18 @@ public class AlbumActivity extends AppCompatActivity implements AlbumAdapter.Tak
                 int dataNmb = cursor.getColumnIndex(mPicData);
                 int nameNmb = cursor.getColumnIndex(mPicName);
                 while (cursor.moveToNext()) {
-                    imageId = cursor.getString(idNmb);
-                    imageUri = Uri.withAppendedPath(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, imageId);
-                    PhotoInfo photoInfo = new PhotoInfo();
-                    photoInfo.setContent(imageUri);
-                    photoInfo.setType(PhotoInfo.TYPE_PHOTO);
-                    photoInfo.setSize(cursor.getLong(sizeNmb));
-                    photoInfo.setPath(cursor.getString(dataNmb));
-                    photoInfo.setName(cursor.getString(nameNmb));
-                    photoInfos.add(photoInfo);
+                    long size = cursor.getLong(sizeNmb);
+                    if (size > 0) {
+                        imageId = cursor.getString(idNmb);
+                        imageUri = Uri.withAppendedPath(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, imageId);
+                        PhotoInfo photoInfo = new PhotoInfo();
+                        photoInfo.setContent(imageUri);
+                        photoInfo.setType(PhotoInfo.TYPE_PHOTO);
+                        photoInfo.setSize(size);
+                        photoInfo.setPath(cursor.getString(dataNmb));
+                        photoInfo.setName(cursor.getString(nameNmb));
+                        photoInfos.add(photoInfo);
+                    }
                 }
             } finally {
                 if (cursor != null) {
