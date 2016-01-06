@@ -1,12 +1,17 @@
 package com.codyy.widgets.adapter;
 
+import android.app.Activity;
+import android.content.ContentValues;
 import android.content.Context;
+import android.content.Intent;
+import android.net.Uri;
+import android.provider.MediaStore;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
 
+import com.codyy.widgets.AlbumActivity;
 import com.codyy.widgets.R;
 import com.codyy.widgets.model.entities.PhotoInfo;
 import com.facebook.drawee.backends.pipeline.Fresco;
@@ -17,7 +22,10 @@ import com.facebook.imagepipeline.core.ImagePipelineConfig;
 import com.facebook.imagepipeline.request.ImageRequest;
 import com.facebook.imagepipeline.request.ImageRequestBuilder;
 
+import java.io.File;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 
 /**
  * Created by kmdai on 15-12-31.
@@ -25,11 +33,20 @@ import java.util.ArrayList;
 public class AlbumAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private Context mContext;
     private ArrayList<PhotoInfo> mPhotoInfos;
+    private TakePhoto mTakePhoto;
 
     public AlbumAdapter(Context context, ArrayList<PhotoInfo> mPhotoInfos, ImagePipelineConfig imagePipelineConfig) {
         this.mContext = context;
         this.mPhotoInfos = mPhotoInfos;
         Fresco.initialize(context, imagePipelineConfig);
+    }
+
+    public TakePhoto getmTakePhoto() {
+        return mTakePhoto;
+    }
+
+    public void setmTakePhoto(TakePhoto mTakePhoto) {
+        this.mTakePhoto = mTakePhoto;
     }
 
     @Override
@@ -108,9 +125,15 @@ public class AlbumAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
             this.itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-
+                    if (mTakePhoto != null) {
+                        mTakePhoto.takePhoto();
+                    }
                 }
             });
         }
+    }
+
+    public interface TakePhoto {
+        void takePhoto();
     }
 }
