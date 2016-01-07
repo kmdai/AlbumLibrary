@@ -6,6 +6,7 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 
 import com.codyy.widgets.PreviewActivity;
 import com.codyy.widgets.R;
@@ -26,9 +27,23 @@ import java.util.ArrayList;
 public class AlbumAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private Context mContext;
     private ArrayList<PhotoInfo> mPhotoInfos;
+    private ArrayList<PhotoInfo> mPhotoSelect;
     private TakePhoto mTakePhoto;
+    /**
+     * 索引
+     */
+    private int mIndex;
+    /**
+     * 索引最大值
+     */
+    private int mMaxIndex;
+    /**
+     * 中间值
+     */
+    private int mMedIndex;
 
     public AlbumAdapter(Context context, ArrayList<PhotoInfo> mPhotoInfos, ImagePipelineConfig imagePipelineConfig) {
+        mPhotoSelect = new ArrayList<>();
         this.mContext = context;
         this.mPhotoInfos = mPhotoInfos;
         Fresco.initialize(context, imagePipelineConfig);
@@ -67,12 +82,13 @@ public class AlbumAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
     }
 
     private void bindViewHoler(RecyclerView.ViewHolder holder, final int position) {
-        AlbumHolder albumHolder = (AlbumHolder) holder;
-        ImageRequestBuilder imageRequestBuilder = ImageRequestBuilder.newBuilderWithSource(mPhotoInfos.get(position).getContent());
+        final PhotoInfo info = mPhotoInfos.get(position);
+        final AlbumHolder albumHolder = (AlbumHolder) holder;
+        ImageRequestBuilder imageRequestBuilder = ImageRequestBuilder.newBuilderWithSource(info.getContent());
         imageRequestBuilder.setResizeOptions(new ResizeOptions(
                 albumHolder.mSimpleDraweeView.getLayoutParams().width,
                 albumHolder.mSimpleDraweeView.getLayoutParams().height));
-        albumHolder.mSimpleDraweeView.setImageURI(mPhotoInfos.get(position).getContent());
+        albumHolder.mSimpleDraweeView.setImageURI(info.getContent());
         ImageRequest imageRequest = imageRequestBuilder.setLocalThumbnailPreviewsEnabled(true).build();
         DraweeController draweeController = Fresco.newDraweeControllerBuilder()
                 .setImageRequest(imageRequest)
@@ -89,6 +105,56 @@ public class AlbumAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
                 mContext.startActivity(intent);
             }
         });
+        if (info.ismCheck()) {
+            int index = info.getmPosition();
+            albumHolder.mTextView.setText(String.valueOf(index));
+            info.setSize(-1);
+            albumHolder.mTextView.setBackgroundResource(R.drawable.oval_bg_true);
+        } else {
+            albumHolder.mTextView.setText("");
+            info.setSize(1);
+            albumHolder.mTextView.setBackgroundResource(R.drawable.oval_bg_false);
+        }
+        albumHolder.mTextView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (info.ismCheck()) {
+                    mPhotoSelect.remove(info);
+                    if (info.getmPosition() < mMaxIndex) {
+                        mMedIndex = info.getmPosition();
+                        setPosition();
+                        notifyDataSetChanged();
+                    }
+                    mIndex--;
+                    info.setmPosition(-1);
+                    albumHolder.mTextView.setText("");
+                    info.setmCheck(false);
+                    albumHolder.mTextView.setBackgroundResource(R.drawable.oval_bg_false);
+                } else {
+                    albumHolder.mTextView.setText(String.valueOf(++mIndex));
+                    mPhotoSelect.add(mIndex - 1, info);
+                    mMaxIndex = mIndex;
+                    info.setmCheck(true);
+                    info.setmPosition(mIndex);
+                    albumHolder.mTextView.setBackgroundResource(R.drawable.oval_bg_true);
+                }
+                if (mTakePhoto != null) {
+                    mTakePhoto.imageSelect();
+                }
+            }
+        });
+    }
+
+    /**
+     * 设置position
+     */
+    private void setPosition() {
+        for (PhotoInfo info : mPhotoSelect) {
+            int index = info.getmPosition();
+            if (index > mMedIndex) {
+                info.setmPosition(--index);
+            }
+        }
     }
 
     @Override
@@ -98,7 +164,7 @@ public class AlbumAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
 
     @Override
     public int getItemViewType(int position) {
-        return position == 0 ? PhotoInfo.TYPE_CAMERA : mPhotoInfos.get(position).getType();
+        return position == 0 ? PhotoInfo.TYPE_CAMERA : mPhotoInfos.get(position - 1).getType();
     }
 
     public void shutDown() {
@@ -110,10 +176,12 @@ public class AlbumAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
      */
     class AlbumHolder extends RecyclerView.ViewHolder {
         SimpleDraweeView mSimpleDraweeView;
+        TextView mTextView;
 
         public AlbumHolder(View itemView) {
             super(itemView);
             mSimpleDraweeView = (SimpleDraweeView) itemView.findViewById(R.id.simpledraweeview_item);
+            mTextView = (TextView) itemView.findViewById(R.id.textview_check);
         }
     }
 
@@ -139,7 +207,13 @@ public class AlbumAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
         }
     }
 
+    public ArrayList<PhotoInfo> getSelectImage() {
+        return mPhotoSelect;
+    }
+
     public interface TakePhoto {
         void takePhoto();
+
+        void imageSelect();
     }
 }

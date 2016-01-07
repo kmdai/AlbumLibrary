@@ -24,6 +24,24 @@ public class PhotoInfo implements Parcelable {
     private String mID;
     private Uri mContent;
     private int type;
+    private int mPosition;
+    private boolean mCheck;
+
+    public boolean ismCheck() {
+        return mCheck;
+    }
+
+    public void setmCheck(boolean mCheck) {
+        this.mCheck = mCheck;
+    }
+
+    public int getmPosition() {
+        return mPosition;
+    }
+
+    public void setmPosition(int mPosition) {
+        this.mPosition = mPosition;
+    }
 
     public int getType() {
         return type;
@@ -73,6 +91,9 @@ public class PhotoInfo implements Parcelable {
         this.mContent = mContent;
     }
 
+    public PhotoInfo() {
+    }
+
     @Override
     public int describeContents() {
         return 0;
@@ -86,9 +107,8 @@ public class PhotoInfo implements Parcelable {
         dest.writeString(this.mID);
         dest.writeParcelable(this.mContent, 0);
         dest.writeInt(this.type);
-    }
-
-    public PhotoInfo() {
+        dest.writeInt(this.mPosition);
+        dest.writeByte(mCheck ? (byte) 1 : (byte) 0);
     }
 
     protected PhotoInfo(Parcel in) {
@@ -98,9 +118,11 @@ public class PhotoInfo implements Parcelable {
         this.mID = in.readString();
         this.mContent = in.readParcelable(Uri.class.getClassLoader());
         this.type = in.readInt();
+        this.mPosition = in.readInt();
+        this.mCheck = in.readByte() != 0;
     }
 
-    public static final Parcelable.Creator<PhotoInfo> CREATOR = new Parcelable.Creator<PhotoInfo>() {
+    public static final Creator<PhotoInfo> CREATOR = new Creator<PhotoInfo>() {
         public PhotoInfo createFromParcel(Parcel source) {
             return new PhotoInfo(source);
         }

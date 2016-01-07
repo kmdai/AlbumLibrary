@@ -17,12 +17,13 @@
         app:placeholderImage="@drawable/ic_launcher" />
 
     <TextView
+        android:id="@+id/textview_check"
         android:layout_width="25dp"
         android:layout_height="25dp"
         android:layout_alignParentRight="true"
         android:layout_marginRight="8dp"
         android:layout_marginTop="8dp"
-        android:background="@drawable/photo_select"
+        android:background="@drawable/oval_bg_false"
         android:gravity="center"
         android:textColor="@android:color/white" />
 </RelativeLayout>

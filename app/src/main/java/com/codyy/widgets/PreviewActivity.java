@@ -1,5 +1,6 @@
 package com.codyy.widgets;
 
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
@@ -13,8 +14,11 @@ import com.facebook.drawee.drawable.ProgressBarDrawable;
 import com.facebook.drawee.drawable.ScalingUtils;
 import com.facebook.drawee.generic.GenericDraweeHierarchy;
 import com.facebook.drawee.generic.GenericDraweeHierarchyBuilder;
+import com.facebook.imagepipeline.request.ImageRequest;
+import com.facebook.imagepipeline.request.ImageRequestBuilder;
 import com.facebook.zoomable.ZoomableDraweeView;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -72,8 +76,9 @@ public class PreviewActivity extends AppCompatActivity {
         @Override
         public Object instantiateItem(ViewGroup container, int position) {
             ZoomableDraweeView view = new ZoomableDraweeView(container.getContext());
-            view.setController(Fresco.newDraweeControllerBuilder()
-                    .setUri(mPhotoInfoList.get(position).getContent())
+            ImageRequest imageRequest = ImageRequestBuilder.newBuilderWithSource(Uri.parse("file://" + mPhotoInfoList.get(position).getPath())).setAutoRotateEnabled(true).build();
+            view.setController(Fresco.newDraweeControllerBuilder().setImageRequest(imageRequest)
+                    .setAutoPlayAnimations(true)
                     .build());
             GenericDraweeHierarchy hierarchy =
                     new GenericDraweeHierarchyBuilder(container.getResources())
