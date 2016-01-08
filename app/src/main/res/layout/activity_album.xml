@@ -1,10 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
     tools:context="com.codyy.widgets.AlbumActivity">
+
+    <android.support.v7.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="@color/main_green"
+        app:title="选择图片"
+        app:titleTextColor="@android:color/white" />
 
     <android.support.v7.widget.RecyclerView
         android:id="@+id/recyclerview"
@@ -23,15 +32,14 @@
 
 
         <TextView
-            android:id="@+id/textView"
+            android:id="@+id/textView_preview"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:layout_centerVertical="true"
-            android:layout_marginLeft="10dp"
-            android:layout_marginTop="10dp"
             android:background="?attr/selectableItemBackground"
             android:gravity="center"
-            android:paddingRight="10dp"
+            android:paddingLeft="15dp"
+            android:paddingRight="15dp"
             android:singleLine="true"
             android:text="预览"
             android:textColor="#69be40"
@@ -41,9 +49,11 @@
             android:id="@+id/tv_preview_image"
             android:layout_width="15dp"
             android:layout_height="15dp"
-            android:layout_alignEnd="@+id/textView"
-            android:layout_alignRight="@+id/textView"
-            android:layout_alignTop="@+id/textView"
+            android:layout_alignEnd="@+id/textView_preview"
+            android:layout_alignRight="@+id/textView_preview"
+            android:layout_alignTop="@+id/textView_preview"
+            android:layout_marginRight="5dp"
+            android:layout_marginTop="5dp"
             android:background="@drawable/oval_bg"
             android:gravity="center"
             android:singleLine="true"
@@ -60,8 +70,8 @@
             android:layout_marginLeft="2dp"
             android:background="?attr/selectableItemBackground"
             android:gravity="center"
-            android:paddingLeft="10dp"
-            android:paddingRight="10dp"
+            android:paddingLeft="15dp"
+            android:paddingRight="15dp"
             android:text="确定"
             android:textColor="#69be40"
             android:textSize="18sp" />

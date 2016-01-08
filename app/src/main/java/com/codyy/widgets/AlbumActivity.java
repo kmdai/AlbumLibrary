@@ -1,40 +1,41 @@
 package com.codyy.widgets;
 
 import android.app.Activity;
-import android.app.ProgressDialog;
-import android.content.ContentValues;
 import android.content.Intent;
 import android.database.Cursor;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.widget.ImageView;
-import android.widget.Toast;
+import android.support.v7.widget.Toolbar;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.TextView;
 
 import com.codyy.widgets.adapter.AlbumAdapter;
 import com.codyy.widgets.imagepipeline.ImagePipelineConfigFactory;
+import com.codyy.widgets.model.entities.AlbumBase;
 import com.codyy.widgets.model.entities.PhotoInfo;
 import com.facebook.drawee.backends.pipeline.Fresco;
-import com.facebook.drawee.view.SimpleDraweeView;
-import com.facebook.imagepipeline.core.ImagePipelineConfig;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
-public class AlbumActivity extends AppCompatActivity implements AlbumAdapter.TakePhoto {
+public class AlbumActivity extends AppCompatActivity implements AlbumAdapter.TakePhoto, OnClickListener {
+    /**
+     * 传入已选择的图片的信息
+     */
+    public static final String SET_SELECT_INFO = "set_select_info";
     private RecyclerView mRecyclerView;
-    private ArrayList<PhotoInfo> mPhotoInfos;
     private AlbumAdapter mAlbumAdapter;
     private String mPhotoName;
     /**
@@ -42,31 +43,67 @@ public class AlbumActivity extends AppCompatActivity implements AlbumAdapter.Tak
      */
     public static final String IMAGE_BASE_PATH = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM).getPath();
     public static final int TAKE_PHOTO = 0x001;
+    /**
+     * 获取预览返回数据
+     */
+    public static final int GET_SELET_INFO = 0x002;
+    /**
+     * 预览图片数目
+     */
+    private TextView mPreviewSize;
+    /**
+     * 预览
+     */
+    private TextView mPreview;
+    /**
+     * 确定发送
+     */
+    private TextView mSend;
+    private Toolbar mToolbar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Fresco.initialize(this);
         setContentView(R.layout.activity_album);
+        Intent intent = getIntent();
+        AlbumBase.mSelectInfo = intent.getParcelableArrayListExtra(SET_SELECT_INFO);
+        if (AlbumBase.mSelectInfo == null) {
+            AlbumBase.mSelectInfo = new ArrayList<>();
+        }
         init();
     }
 
     private void init() {
+        mToolbar = (Toolbar) findViewById(R.id.toolbar);
         mRecyclerView = (RecyclerView) findViewById(R.id.recyclerview);
         GridLayoutManager gridLayoutManager = new GridLayoutManager(this, 3);
         mRecyclerView.setLayoutManager(gridLayoutManager);
+        mPreviewSize = (TextView) findViewById(R.id.tv_preview_image);
+        mPreview = (TextView) findViewById(R.id.textView_preview);
+        mPreview.setOnClickListener(this);
+        mSend = (TextView) findViewById(R.id.btn_ok);
+        mSend.setOnClickListener(this);
+        if (AlbumBase.mSelectInfo == null || AlbumBase.mSelectInfo.size() == 0) {
+            mPreviewSize.setVisibility(View.GONE);
+        }
+        mToolbar.collapseActionView();
+        setSupportActionBar(mToolbar);
+        getSupportActionBar().setHomeAsUpIndicator(R.drawable.ic_back);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setDisplayShowHomeEnabled(true);
     }
 
     @Override
     protected void onStart() {
         super.onStart();
-        if (mPhotoInfos == null) {
-            mPhotoInfos = new ArrayList<>();
-            mAlbumAdapter = new AlbumAdapter(AlbumActivity.this, mPhotoInfos, ImagePipelineConfigFactory.getImagePipelineConfig(AlbumActivity.this));
+        if (AlbumBase.mPhotoInfos == null) {
+            AlbumBase.mPhotoInfos = new ArrayList<>();
+            mAlbumAdapter = new AlbumAdapter(AlbumActivity.this, ImagePipelineConfigFactory.getImagePipelineConfig(AlbumActivity.this));
             mAlbumAdapter.setmTakePhoto(this);
             mRecyclerView.setAdapter(mAlbumAdapter);
         }
-        if (mPhotoInfos.size() == 0) {
+        if (AlbumBase.mPhotoInfos.size() == 0) {
             new LocalData().execute(0);
         }
     }
@@ -90,7 +127,13 @@ public class AlbumActivity extends AppCompatActivity implements AlbumAdapter.Tak
 
     @Override
     public void imageSelect() {
-
+        int a = AlbumBase.mSelectInfo.size();
+        if (a == 0) {
+            mPreviewSize.setVisibility(View.GONE);
+        } else if (mPreviewSize.getVisibility() == View.GONE) {
+            mPreviewSize.setVisibility(View.VISIBLE);
+        }
+        mPreviewSize.setText(String.valueOf(a));
     }
 
     @Override
@@ -109,12 +152,32 @@ public class AlbumActivity extends AppCompatActivity implements AlbumAdapter.Tak
                         photoInfo.setPath(mPhotoName);
                         photoInfo.setContent(Uri.fromFile(file));
                         photoInfo.setSize(file.length());
-                        mPhotoInfos.add(0, photoInfo);
+                        AlbumBase.mPhotoInfos.add(0, photoInfo);
                         mAlbumAdapter.notifyDataSetChanged();
                     }
                 }
                 break;
+            case GET_SELET_INFO:
+//                mAlbumAdapter.notifyDataSetChanged();
+                mAlbumAdapter.dataInit();
+                break;
         }
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                finish();
+                break;
+        }
+        return true;
     }
 
     @Override
@@ -124,6 +187,25 @@ public class AlbumActivity extends AppCompatActivity implements AlbumAdapter.Tak
             mAlbumAdapter.shutDown();
         }
     }
+
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()) {
+            case R.id.textView_preview:
+                if (AlbumBase.mSelectInfo.size() > 0) {
+                    Intent intent = new Intent(this, PreviewActivity.class);
+                    intent.putExtra(PreviewActivity.IMAGE_TYPT, PreviewActivity.TYPE_PREVIEW);
+                    intent.putExtra(PreviewActivity.PAGE_INFO, 0);
+                    startActivity(intent);
+                } else {
+                    Snackbar.make(v, getResources().getString(R.string.no_select), Snackbar.LENGTH_SHORT).show();
+                }
+                break;
+            case R.id.btn_ok:
+                break;
+        }
+    }
+
 
     class LocalData extends AsyncTask<Integer, Integer, ArrayList<PhotoInfo>> {
         String mPicId = MediaStore.Images.Media._ID;
@@ -157,6 +239,9 @@ public class AlbumActivity extends AppCompatActivity implements AlbumAdapter.Tak
                         photoInfo.setSize(size);
                         photoInfo.setPath(cursor.getString(dataNmb));
                         photoInfo.setName(cursor.getString(nameNmb));
+                        if (AlbumBase.mSelectInfo != null) {
+                            hasSelect(photoInfo);
+                        }
                         photoInfos.add(photoInfo);
                     }
                 }
@@ -168,16 +253,31 @@ public class AlbumActivity extends AppCompatActivity implements AlbumAdapter.Tak
             return photoInfos;
         }
 
+        protected void hasSelect(PhotoInfo photoInfo) {
+            for (PhotoInfo info : AlbumBase.mSelectInfo) {
+                if (info.getPath().equals(photoInfo.getPath())) {
+                    photoInfo.setmCheck(true);
+                    photoInfo.setmPosition(info.getmPosition());
+                    break;
+                }
+            }
+        }
+
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
-            mPhotoInfos.clear();
+            if (AlbumBase.mPhotoInfos == null) {
+                AlbumBase.mPhotoInfos = new ArrayList<>();
+            } else {
+                AlbumBase.mPhotoInfos.clear();
+            }
         }
 
         @Override
         protected void onPostExecute(ArrayList<PhotoInfo> s) {
             super.onPostExecute(s);
-            mPhotoInfos.addAll(s);
+            AlbumBase.mPhotoInfos.clear();
+            AlbumBase.mPhotoInfos.addAll(s);
             mAlbumAdapter.notifyDataSetChanged();
         }
     }

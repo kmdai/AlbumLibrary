@@ -10,6 +10,7 @@ import android.widget.TextView;
 
 import com.codyy.widgets.PreviewActivity;
 import com.codyy.widgets.R;
+import com.codyy.widgets.model.entities.AlbumBase;
 import com.codyy.widgets.model.entities.PhotoInfo;
 import com.facebook.drawee.backends.pipeline.Fresco;
 import com.facebook.drawee.interfaces.DraweeController;
@@ -19,33 +20,16 @@ import com.facebook.imagepipeline.core.ImagePipelineConfig;
 import com.facebook.imagepipeline.request.ImageRequest;
 import com.facebook.imagepipeline.request.ImageRequestBuilder;
 
-import java.util.ArrayList;
-
 /**
  * Created by kmdai on 15-12-31.
  */
 public class AlbumAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private Context mContext;
-    private ArrayList<PhotoInfo> mPhotoInfos;
-    private ArrayList<PhotoInfo> mPhotoSelect;
     private TakePhoto mTakePhoto;
-    /**
-     * 索引
-     */
-    private int mIndex;
-    /**
-     * 索引最大值
-     */
-    private int mMaxIndex;
-    /**
-     * 中间值
-     */
-    private int mMedIndex;
 
-    public AlbumAdapter(Context context, ArrayList<PhotoInfo> mPhotoInfos, ImagePipelineConfig imagePipelineConfig) {
-        mPhotoSelect = new ArrayList<>();
+    public AlbumAdapter(Context context, ImagePipelineConfig imagePipelineConfig) {
         this.mContext = context;
-        this.mPhotoInfos = mPhotoInfos;
+        AlbumBase.mIndex = AlbumBase.mSelectInfo.size();
         Fresco.initialize(context, imagePipelineConfig);
     }
 
@@ -82,7 +66,7 @@ public class AlbumAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
     }
 
     private void bindViewHoler(RecyclerView.ViewHolder holder, final int position) {
-        final PhotoInfo info = mPhotoInfos.get(position);
+        final PhotoInfo info = AlbumBase.mPhotoInfos.get(position);
         final AlbumHolder albumHolder = (AlbumHolder) holder;
         ImageRequestBuilder imageRequestBuilder = ImageRequestBuilder.newBuilderWithSource(info.getContent());
         imageRequestBuilder.setResizeOptions(new ResizeOptions(
@@ -100,7 +84,7 @@ public class AlbumAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(mContext, PreviewActivity.class);
-                intent.putParcelableArrayListExtra(PreviewActivity.IMAGE_INFO, mPhotoInfos);
+                intent.putExtra(PreviewActivity.IMAGE_TYPT, PreviewActivity.TYPE_ALL);
                 intent.putExtra(PreviewActivity.PAGE_INFO, position);
                 mContext.startActivity(intent);
             }
@@ -119,23 +103,23 @@ public class AlbumAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
             @Override
             public void onClick(View v) {
                 if (info.ismCheck()) {
-                    mPhotoSelect.remove(info);
-                    if (info.getmPosition() < mMaxIndex) {
-                        mMedIndex = info.getmPosition();
+                    AlbumBase.mSelectInfo.remove(info);
+                    if (info.getmPosition() < AlbumBase.mMaxIndex) {
+                        AlbumBase.mMedIndex = info.getmPosition();
                         setPosition();
                         notifyDataSetChanged();
                     }
-                    mIndex--;
+                    AlbumBase.mIndex--;
                     info.setmPosition(-1);
                     albumHolder.mTextView.setText("");
                     info.setmCheck(false);
                     albumHolder.mTextView.setBackgroundResource(R.drawable.oval_bg_false);
                 } else {
-                    albumHolder.mTextView.setText(String.valueOf(++mIndex));
-                    mPhotoSelect.add(mIndex - 1, info);
-                    mMaxIndex = mIndex;
+                    albumHolder.mTextView.setText(String.valueOf(++AlbumBase.mIndex));
+                    AlbumBase.mSelectInfo.add(AlbumBase.mIndex - 1, info);
+                    AlbumBase.mMaxIndex = AlbumBase.mIndex;
                     info.setmCheck(true);
-                    info.setmPosition(mIndex);
+                    info.setmPosition(AlbumBase.mIndex);
                     albumHolder.mTextView.setBackgroundResource(R.drawable.oval_bg_true);
                 }
                 if (mTakePhoto != null) {
@@ -149,26 +133,35 @@ public class AlbumAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
      * 设置position
      */
     private void setPosition() {
-        for (PhotoInfo info : mPhotoSelect) {
+        for (PhotoInfo info : AlbumBase.mSelectInfo) {
             int index = info.getmPosition();
-            if (index > mMedIndex) {
+            if (index > AlbumBase.mMedIndex) {
                 info.setmPosition(--index);
             }
         }
     }
 
+    public void dataInit() {
+//        AlbumBase.mIndex = AlbumBase.mSelectInfo.size();
+//        AlbumBase.mMaxIndex = AlbumBase.mIndex;
+//        AlbumBase.mMedIndex = -1;
+        setPosition();
+        notifyDataSetChanged();
+    }
+
     @Override
     public int getItemCount() {
-        return mPhotoInfos.size() <= 0 ? 1 : mPhotoInfos.size() + 1;
+        return AlbumBase.mPhotoInfos.size() <= 0 ? 1 : AlbumBase.mPhotoInfos.size() + 1;
     }
 
     @Override
     public int getItemViewType(int position) {
-        return position == 0 ? PhotoInfo.TYPE_CAMERA : mPhotoInfos.get(position - 1).getType();
+        return position == 0 ? PhotoInfo.TYPE_CAMERA : AlbumBase.mPhotoInfos.get(position - 1).getType();
     }
 
     public void shutDown() {
         Fresco.shutDown();
+        AlbumBase.clear();
     }
 
     /**
@@ -205,10 +198,6 @@ public class AlbumAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
                 }
             });
         }
-    }
-
-    public ArrayList<PhotoInfo> getSelectImage() {
-        return mPhotoSelect;
     }
 
     public interface TakePhoto {
