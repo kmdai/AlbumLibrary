@@ -104,6 +104,7 @@ public class AlbumAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
                 if (mTakePhoto != null) {
                     mTakePhoto.imageSelect();
                 }
+                notifyDataSetChanged();
             }
         });
     }

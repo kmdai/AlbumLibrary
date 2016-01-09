@@ -65,13 +65,12 @@ public class AlbumActivity extends AppCompatActivity implements AlbumAdapter.Tak
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Fresco.initialize(this);
+        AlbumBase.initialize();
         setContentView(R.layout.activity_album);
         Intent intent = getIntent();
         ArrayList<PhotoInfo> infos = intent.getParcelableArrayListExtra(SET_SELECT_INFO);
-        if (infos == null) {
-            AlbumBase.SELECT_INFO = new ArrayList<>();
-        } else {
-            AlbumBase.SELECT_INFO = new ArrayList<>(infos);
+        if (infos != null) {
+            AlbumBase.selectInit(infos);
         }
         init();
     }
@@ -100,8 +99,7 @@ public class AlbumActivity extends AppCompatActivity implements AlbumAdapter.Tak
     @Override
     protected void onStart() {
         super.onStart();
-        if (AlbumBase.PHOTO_INFO == null) {
-            AlbumBase.PHOTO_INFO = new ArrayList<>();
+        if (AlbumBase.PHOTO_INFO == null || AlbumBase.PHOTO_INFO.size() == 0) {
             mAlbumAdapter = new AlbumAdapter(AlbumActivity.this, ImagePipelineConfigFactory.getImagePipelineConfig(AlbumActivity.this));
             mAlbumAdapter.setmTakePhoto(this);
             mRecyclerView.setAdapter(mAlbumAdapter);
@@ -212,61 +210,14 @@ public class AlbumActivity extends AppCompatActivity implements AlbumAdapter.Tak
     }
 
 
-    class LocalData extends AsyncTask<Integer, Integer, ArrayList<PhotoInfo>> {
-        String mPicId = MediaStore.Images.Media._ID;
-        String mPicData = MediaStore.Images.Media.DATA;
-        String mPicName = MediaStore.Images.Media.DISPLAY_NAME;
-        String mPicSize = MediaStore.Images.Media.SIZE;
-        String mDateAdd = MediaStore.Images.Media.DATE_ADDED;
+    class LocalData extends AsyncTask<Integer, Integer, Boolean> {
+
 
         @Override
-        protected ArrayList<PhotoInfo> doInBackground(Integer... params) {
-            ArrayList<PhotoInfo> photoInfos = new ArrayList<>();
-            Uri externalContentUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
-            String[] projection = {mPicId, mPicData, mPicName, mPicSize, mDateAdd};
-            Cursor cursor = null;
-            try {
-                cursor = getContentResolver().query(externalContentUri, projection, null, null, mDateAdd + " DESC");
-                String imageId;
-                Uri imageUri;
-                int idNmb = cursor.getColumnIndexOrThrow(mPicId);
-                int sizeNmb = cursor.getColumnIndex(mPicSize);
-                int dataNmb = cursor.getColumnIndex(mPicData);
-                int nameNmb = cursor.getColumnIndex(mPicName);
-                while (cursor.moveToNext()) {
-                    long size = cursor.getLong(sizeNmb);
-                    if (size > 0) {
-                        imageId = cursor.getString(idNmb);
-                        imageUri = Uri.withAppendedPath(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, imageId);
-                        PhotoInfo photoInfo = new PhotoInfo();
-                        photoInfo.setContent(imageUri);
-                        photoInfo.setType(PhotoInfo.TYPE_PHOTO);
-                        photoInfo.setSize(size);
-                        photoInfo.setPath(cursor.getString(dataNmb));
-                        photoInfo.setName(cursor.getString(nameNmb));
-                        if (AlbumBase.SELECT_INFO != null) {
-                            hasSelect(photoInfo);
-                        }
-                        photoInfos.add(photoInfo);
-                    }
-                }
-            } finally {
-                if (cursor != null) {
-                    cursor.close();
-                }
-            }
-            return photoInfos;
+        protected Boolean doInBackground(Integer... params) {
+            return AlbumBase.scanPhoto(AlbumActivity.this);
         }
 
-        protected void hasSelect(PhotoInfo photoInfo) {
-            for (PhotoInfo info : AlbumBase.SELECT_INFO) {
-                if (info.getPath().equals(photoInfo.getPath())) {
-                    photoInfo.setmCheck(true);
-                    photoInfo.setmPosition(info.getmPosition());
-                    break;
-                }
-            }
-        }
 
         @Override
         protected void onPreExecute() {
@@ -275,12 +226,12 @@ public class AlbumActivity extends AppCompatActivity implements AlbumAdapter.Tak
         }
 
         @Override
-        protected void onPostExecute(ArrayList<PhotoInfo> s) {
-            super.onPostExecute(s);
-            AlbumBase.PHOTO_INFO.clear();
-            AlbumBase.PHOTO_INFO.addAll(s);
-            if (mAlbumAdapter != null) {
-                mAlbumAdapter.notifyDataSetChanged();
+        protected void onPostExecute(Boolean flag) {
+            super.onPostExecute(flag);
+            if (flag) {
+                if (mAlbumAdapter != null) {
+                    mAlbumAdapter.notifyDataSetChanged();
+                }
             }
         }
     }

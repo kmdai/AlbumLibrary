@@ -1,5 +1,12 @@
 package com.codyy.widgets.model.entities;
 
+import android.content.Context;
+import android.database.Cursor;
+import android.net.Uri;
+import android.provider.MediaStore;
+import android.support.annotation.NonNull;
+import android.util.Log;
+
 import java.util.ArrayList;
 
 /**
@@ -23,6 +30,19 @@ public class AlbumBase {
      * 中间值
      */
     public static int MED_INDEX;
+
+    public static void initialize() {
+        PHOTO_INFO = new ArrayList<>();
+        SELECT_INFO = new ArrayList<>();
+    }
+
+    public static void selectInit(@NonNull ArrayList<PhotoInfo> infos) {
+        if (SELECT_INFO == null) {
+            throw new NullPointerException("AlbumBase bot initialize!!!");
+        }
+        SELECT_INFO.clear();
+        SELECT_INFO.addAll(infos);
+    }
 
     /**
      * 数据初始化
@@ -83,7 +103,59 @@ public class AlbumBase {
         }
     }
 
-    public static void scanPhoto() {
+    public static boolean scanPhoto(Context context) {
+        String mPicId = MediaStore.Images.Media._ID;
+        String mPicData = MediaStore.Images.Media.DATA;
+        String mPicName = MediaStore.Images.Media.DISPLAY_NAME;
+        String mPicSize = MediaStore.Images.Media.SIZE;
+        String mDateAdd = MediaStore.Images.Media.DATE_ADDED;
+        Uri externalContentUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
+        String[] projection = {mPicId, mPicData, mPicName, mPicSize, mDateAdd};
+        Cursor cursor = null;
+        try {
+            cursor = context.getContentResolver().query(externalContentUri, projection, null, null, mDateAdd + " DESC");
+            String imageId;
+            Uri imageUri;
+            int idNmb = cursor.getColumnIndexOrThrow(mPicId);
+            int sizeNmb = cursor.getColumnIndex(mPicSize);
+            int dataNmb = cursor.getColumnIndex(mPicData);
+            int nameNmb = cursor.getColumnIndex(mPicName);
+            while (cursor.moveToNext()) {
+                long size = cursor.getLong(sizeNmb);
+                if (size > 0) {
+                    imageId = cursor.getString(idNmb);
+                    imageUri = Uri.withAppendedPath(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, imageId);
+                    PhotoInfo photoInfo = new PhotoInfo();
+                    photoInfo.setContent(imageUri);
+                    photoInfo.setType(PhotoInfo.TYPE_PHOTO);
+                    photoInfo.setSize(size);
+                    photoInfo.setPath(cursor.getString(dataNmb));
+                    photoInfo.setName(cursor.getString(nameNmb));
+                    if (AlbumBase.SELECT_INFO != null) {
+                        hasSelect(photoInfo);
+                    }
+                    PHOTO_INFO.add(photoInfo);
+                }
+            }
+        } catch (Exception e) {
+            Log.e("", e.toString());
+            return false;
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
+        System.out.println(PHOTO_INFO.size());
+        return true;
+    }
 
+    protected static void hasSelect(PhotoInfo photoInfo) {
+        for (PhotoInfo info : AlbumBase.SELECT_INFO) {
+            if (info.getPath().equals(photoInfo.getPath())) {
+                photoInfo.setmCheck(true);
+                photoInfo.setmPosition(info.getmPosition());
+                break;
+            }
+        }
     }
 }
