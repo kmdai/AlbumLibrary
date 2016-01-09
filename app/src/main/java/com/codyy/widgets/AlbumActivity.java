@@ -67,9 +67,11 @@ public class AlbumActivity extends AppCompatActivity implements AlbumAdapter.Tak
         Fresco.initialize(this);
         setContentView(R.layout.activity_album);
         Intent intent = getIntent();
-        AlbumBase.mSelectInfo = intent.getParcelableArrayListExtra(SET_SELECT_INFO);
-        if (AlbumBase.mSelectInfo == null) {
-            AlbumBase.mSelectInfo = new ArrayList<>();
+        ArrayList<PhotoInfo> infos = intent.getParcelableArrayListExtra(SET_SELECT_INFO);
+        if (infos == null) {
+            AlbumBase.SELECT_INFO = new ArrayList<>();
+        } else {
+            AlbumBase.SELECT_INFO = new ArrayList<>(infos);
         }
         init();
     }
@@ -77,6 +79,7 @@ public class AlbumActivity extends AppCompatActivity implements AlbumAdapter.Tak
     private void init() {
         mToolbar = (Toolbar) findViewById(R.id.toolbar);
         mRecyclerView = (RecyclerView) findViewById(R.id.recyclerview);
+        mRecyclerView.setHasFixedSize(true);
         GridLayoutManager gridLayoutManager = new GridLayoutManager(this, 3);
         mRecyclerView.setLayoutManager(gridLayoutManager);
         mPreviewSize = (TextView) findViewById(R.id.tv_preview_image);
@@ -84,7 +87,7 @@ public class AlbumActivity extends AppCompatActivity implements AlbumAdapter.Tak
         mPreview.setOnClickListener(this);
         mSend = (TextView) findViewById(R.id.btn_ok);
         mSend.setOnClickListener(this);
-        if (AlbumBase.mSelectInfo == null || AlbumBase.mSelectInfo.size() == 0) {
+        if (AlbumBase.SELECT_INFO == null || AlbumBase.SELECT_INFO.size() == 0) {
             mPreviewSize.setVisibility(View.GONE);
         }
         mToolbar.collapseActionView();
@@ -97,13 +100,13 @@ public class AlbumActivity extends AppCompatActivity implements AlbumAdapter.Tak
     @Override
     protected void onStart() {
         super.onStart();
-        if (AlbumBase.mPhotoInfos == null) {
-            AlbumBase.mPhotoInfos = new ArrayList<>();
+        if (AlbumBase.PHOTO_INFO == null) {
+            AlbumBase.PHOTO_INFO = new ArrayList<>();
             mAlbumAdapter = new AlbumAdapter(AlbumActivity.this, ImagePipelineConfigFactory.getImagePipelineConfig(AlbumActivity.this));
             mAlbumAdapter.setmTakePhoto(this);
             mRecyclerView.setAdapter(mAlbumAdapter);
         }
-        if (AlbumBase.mPhotoInfos.size() == 0) {
+        if (AlbumBase.PHOTO_INFO.size() == 0) {
             new LocalData().execute(0);
         }
     }
@@ -127,7 +130,7 @@ public class AlbumActivity extends AppCompatActivity implements AlbumAdapter.Tak
 
     @Override
     public void imageSelect() {
-        int a = AlbumBase.mSelectInfo.size();
+        int a = AlbumBase.SELECT_INFO.size();
         if (a == 0) {
             mPreviewSize.setVisibility(View.GONE);
         } else if (mPreviewSize.getVisibility() == View.GONE) {
@@ -152,13 +155,13 @@ public class AlbumActivity extends AppCompatActivity implements AlbumAdapter.Tak
                         photoInfo.setPath(mPhotoName);
                         photoInfo.setContent(Uri.fromFile(file));
                         photoInfo.setSize(file.length());
-                        AlbumBase.mPhotoInfos.add(0, photoInfo);
+                        AlbumBase.PHOTO_INFO.add(0, photoInfo);
                         mAlbumAdapter.notifyDataSetChanged();
                     }
                 }
                 break;
             case GET_SELET_INFO:
-//                mAlbumAdapter.notifyDataSetChanged();
+                imageSelect();
                 mAlbumAdapter.dataInit();
                 break;
         }
@@ -183,20 +186,22 @@ public class AlbumActivity extends AppCompatActivity implements AlbumAdapter.Tak
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        AlbumBase.clear();
         if (mAlbumAdapter != null) {
             mAlbumAdapter.shutDown();
         }
+        System.gc();
     }
 
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.textView_preview:
-                if (AlbumBase.mSelectInfo.size() > 0) {
+                if (AlbumBase.SELECT_INFO.size() > 0) {
                     Intent intent = new Intent(this, PreviewActivity.class);
                     intent.putExtra(PreviewActivity.IMAGE_TYPT, PreviewActivity.TYPE_PREVIEW);
                     intent.putExtra(PreviewActivity.PAGE_INFO, 0);
-                    startActivity(intent);
+                    startActivityForResult(intent, GET_SELET_INFO);
                 } else {
                     Snackbar.make(v, getResources().getString(R.string.no_select), Snackbar.LENGTH_SHORT).show();
                 }
@@ -239,7 +244,7 @@ public class AlbumActivity extends AppCompatActivity implements AlbumAdapter.Tak
                         photoInfo.setSize(size);
                         photoInfo.setPath(cursor.getString(dataNmb));
                         photoInfo.setName(cursor.getString(nameNmb));
-                        if (AlbumBase.mSelectInfo != null) {
+                        if (AlbumBase.SELECT_INFO != null) {
                             hasSelect(photoInfo);
                         }
                         photoInfos.add(photoInfo);
@@ -254,7 +259,7 @@ public class AlbumActivity extends AppCompatActivity implements AlbumAdapter.Tak
         }
 
         protected void hasSelect(PhotoInfo photoInfo) {
-            for (PhotoInfo info : AlbumBase.mSelectInfo) {
+            for (PhotoInfo info : AlbumBase.SELECT_INFO) {
                 if (info.getPath().equals(photoInfo.getPath())) {
                     photoInfo.setmCheck(true);
                     photoInfo.setmPosition(info.getmPosition());
@@ -266,19 +271,17 @@ public class AlbumActivity extends AppCompatActivity implements AlbumAdapter.Tak
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
-            if (AlbumBase.mPhotoInfos == null) {
-                AlbumBase.mPhotoInfos = new ArrayList<>();
-            } else {
-                AlbumBase.mPhotoInfos.clear();
-            }
+            AlbumBase.dataInit();
         }
 
         @Override
         protected void onPostExecute(ArrayList<PhotoInfo> s) {
             super.onPostExecute(s);
-            AlbumBase.mPhotoInfos.clear();
-            AlbumBase.mPhotoInfos.addAll(s);
-            mAlbumAdapter.notifyDataSetChanged();
+            AlbumBase.PHOTO_INFO.clear();
+            AlbumBase.PHOTO_INFO.addAll(s);
+            if (mAlbumAdapter != null) {
+                mAlbumAdapter.notifyDataSetChanged();
+            }
         }
     }
 }

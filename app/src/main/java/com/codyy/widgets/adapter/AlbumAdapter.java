@@ -1,5 +1,6 @@
 package com.codyy.widgets.adapter;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.support.v7.widget.RecyclerView;
@@ -8,6 +9,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import com.codyy.widgets.AlbumActivity;
 import com.codyy.widgets.PreviewActivity;
 import com.codyy.widgets.R;
 import com.codyy.widgets.model.entities.AlbumBase;
@@ -20,16 +22,20 @@ import com.facebook.imagepipeline.core.ImagePipelineConfig;
 import com.facebook.imagepipeline.request.ImageRequest;
 import com.facebook.imagepipeline.request.ImageRequestBuilder;
 
+import java.util.ArrayList;
+
 /**
  * Created by kmdai on 15-12-31.
  */
 public class AlbumAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private Context mContext;
     private TakePhoto mTakePhoto;
+    private ArrayList<PhotoInfo> mPhotoInfos;
 
     public AlbumAdapter(Context context, ImagePipelineConfig imagePipelineConfig) {
         this.mContext = context;
-        AlbumBase.mIndex = AlbumBase.mSelectInfo.size();
+        AlbumBase.dataInit();
+        mPhotoInfos = AlbumBase.PHOTO_INFO;
         Fresco.initialize(context, imagePipelineConfig);
     }
 
@@ -66,7 +72,7 @@ public class AlbumAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
     }
 
     private void bindViewHoler(RecyclerView.ViewHolder holder, final int position) {
-        final PhotoInfo info = AlbumBase.mPhotoInfos.get(position);
+        final PhotoInfo info = mPhotoInfos.get(position);
         final AlbumHolder albumHolder = (AlbumHolder) holder;
         ImageRequestBuilder imageRequestBuilder = ImageRequestBuilder.newBuilderWithSource(info.getContent());
         imageRequestBuilder.setResizeOptions(new ResizeOptions(
@@ -86,42 +92,15 @@ public class AlbumAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
                 Intent intent = new Intent(mContext, PreviewActivity.class);
                 intent.putExtra(PreviewActivity.IMAGE_TYPT, PreviewActivity.TYPE_ALL);
                 intent.putExtra(PreviewActivity.PAGE_INFO, position);
-                mContext.startActivity(intent);
+                ((Activity) mContext).startActivityForResult(intent, AlbumActivity.GET_SELET_INFO);
             }
         });
-        if (info.ismCheck()) {
-            int index = info.getmPosition();
-            albumHolder.mTextView.setText(String.valueOf(index));
-            info.setSize(-1);
-            albumHolder.mTextView.setBackgroundResource(R.drawable.oval_bg_true);
-        } else {
-            albumHolder.mTextView.setText("");
-            info.setSize(1);
-            albumHolder.mTextView.setBackgroundResource(R.drawable.oval_bg_false);
-        }
+        setTextViewBg(info, albumHolder.mTextView);
         albumHolder.mTextView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (info.ismCheck()) {
-                    AlbumBase.mSelectInfo.remove(info);
-                    if (info.getmPosition() < AlbumBase.mMaxIndex) {
-                        AlbumBase.mMedIndex = info.getmPosition();
-                        setPosition();
-                        notifyDataSetChanged();
-                    }
-                    AlbumBase.mIndex--;
-                    info.setmPosition(-1);
-                    albumHolder.mTextView.setText("");
-                    info.setmCheck(false);
-                    albumHolder.mTextView.setBackgroundResource(R.drawable.oval_bg_false);
-                } else {
-                    albumHolder.mTextView.setText(String.valueOf(++AlbumBase.mIndex));
-                    AlbumBase.mSelectInfo.add(AlbumBase.mIndex - 1, info);
-                    AlbumBase.mMaxIndex = AlbumBase.mIndex;
-                    info.setmCheck(true);
-                    info.setmPosition(AlbumBase.mIndex);
-                    albumHolder.mTextView.setBackgroundResource(R.drawable.oval_bg_true);
-                }
+                AlbumBase.onPhotoSelect(info);
+                setTextViewBg(info, albumHolder.mTextView);
                 if (mTakePhoto != null) {
                     mTakePhoto.imageSelect();
                 }
@@ -129,39 +108,33 @@ public class AlbumAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
         });
     }
 
-    /**
-     * 设置position
-     */
-    private void setPosition() {
-        for (PhotoInfo info : AlbumBase.mSelectInfo) {
+    private void setTextViewBg(PhotoInfo info, TextView textView) {
+        if (info.ismCheck()) {
             int index = info.getmPosition();
-            if (index > AlbumBase.mMedIndex) {
-                info.setmPosition(--index);
-            }
+            textView.setText(String.valueOf(index));
+            textView.setBackgroundResource(R.drawable.oval_bg_true);
+        } else {
+            textView.setText("");
+            textView.setBackgroundResource(R.drawable.oval_bg_false);
         }
     }
 
     public void dataInit() {
-//        AlbumBase.mIndex = AlbumBase.mSelectInfo.size();
-//        AlbumBase.mMaxIndex = AlbumBase.mIndex;
-//        AlbumBase.mMedIndex = -1;
-        setPosition();
         notifyDataSetChanged();
     }
 
     @Override
     public int getItemCount() {
-        return AlbumBase.mPhotoInfos.size() <= 0 ? 1 : AlbumBase.mPhotoInfos.size() + 1;
+        return mPhotoInfos.size() <= 0 ? 1 : mPhotoInfos.size() + 1;
     }
 
     @Override
     public int getItemViewType(int position) {
-        return position == 0 ? PhotoInfo.TYPE_CAMERA : AlbumBase.mPhotoInfos.get(position - 1).getType();
+        return position == 0 ? PhotoInfo.TYPE_CAMERA : mPhotoInfos.get(position - 1).getType();
     }
 
     public void shutDown() {
         Fresco.shutDown();
-        AlbumBase.clear();
     }
 
     /**

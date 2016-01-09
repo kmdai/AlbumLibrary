@@ -47,18 +47,6 @@ public class PreviewActivity extends AppCompatActivity implements OnClickListene
     private Toolbar mToolbar;
     private TextView mTitleView;
     private TextView mTitleSelect;
-//    /**
-//     * 索引
-//     */
-//    private int mIndex;
-//    /**
-//     * 索引最大值
-//     */
-//    private int mMaxIndex;
-//    /**
-//     * 中间值
-//     */
-//    private int mMedIndex;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,11 +54,10 @@ public class PreviewActivity extends AppCompatActivity implements OnClickListene
         setContentView(R.layout.activity_pre_view);
         mType = getIntent().getIntExtra(IMAGE_TYPT, TYPE_ALL);
         mPage = getIntent().getIntExtra(PAGE_INFO, 0);
-//        mIndex = AlbumBase.mSelectInfo.size();
         if (mType == TYPE_ALL) {
-            mPhotoInfoList = AlbumBase.mPhotoInfos;
+            mPhotoInfoList = AlbumBase.PHOTO_INFO;
         } else {
-            mPhotoInfoList = AlbumBase.mSelectInfo;
+            mPhotoInfoList = new ArrayList<>(AlbumBase.SELECT_INFO);
         }
         init();
         mViewPager.setCurrentItem(mPage, false);
@@ -96,7 +83,7 @@ public class PreviewActivity extends AppCompatActivity implements OnClickListene
                 mTitleSelect.setBackgroundResource(R.drawable.oval_bg_true);
                 mTitleSelect.setText(String.valueOf(info.getmPosition()));
             } else {
-                mTitleSelect.setBackgroundResource(R.drawable.oval_bg_false);
+                mTitleSelect.setBackgroundResource(R.drawable.oval_bg_pre_false);
                 mTitleSelect.setText("");
             }
         }
@@ -152,7 +139,7 @@ public class PreviewActivity extends AppCompatActivity implements OnClickListene
                 mTitleSelect.setBackgroundResource(R.drawable.oval_bg_true);
                 mTitleSelect.setText(String.valueOf(photoInfo.getmPosition()));
             } else {
-                mTitleSelect.setBackgroundResource(R.drawable.oval_bg_false);
+                mTitleSelect.setBackgroundResource(R.drawable.oval_bg_pre_false);
                 mTitleSelect.setText("");
             }
         }
@@ -168,43 +155,15 @@ public class PreviewActivity extends AppCompatActivity implements OnClickListene
         switch (v.getId()) {
             case R.id.title_select:
                 PhotoInfo info = mPhotoInfoList.get(mViewPager.getCurrentItem());
-                if (info.ismCheck()) {
-                    if (mType == TYPE_PREVIEW) {
-                        mPhotoInfoList.remove(info);
-                    }
-                    if (info.getmPosition() < AlbumBase.mMaxIndex) {
-                        AlbumBase.mMedIndex = info.getmPosition();
-                        setPosition();
-                    }
-                    AlbumBase.mIndex--;
-                    info.setmPosition(-1);
+                AlbumBase.onPhotoSelect(info);
+                if (!info.ismCheck()) {
                     mTitleSelect.setText("");
-                    info.setmCheck(false);
-                    mTitleSelect.setBackgroundResource(R.drawable.oval_bg_false);
+                    mTitleSelect.setBackgroundResource(R.drawable.oval_bg_pre_false);
                 } else {
-                    mTitleSelect.setText(String.valueOf(++AlbumBase.mIndex));
-                    if (mType == TYPE_PREVIEW) {
-                        AlbumBase.mSelectInfo.add(AlbumBase.mIndex - 1, info);
-                    }
-                    AlbumBase.mMaxIndex = AlbumBase.mIndex;
-                    info.setmCheck(true);
-                    info.setmPosition(AlbumBase.mIndex);
+                    mTitleSelect.setText(String.valueOf(info.getmPosition()));
                     mTitleSelect.setBackgroundResource(R.drawable.oval_bg_true);
                 }
-                mPreviewAdapter.notifyDataSetChanged();
                 break;
-        }
-    }
-
-    /**
-     * 设置position
-     */
-    private void setPosition() {
-        for (PhotoInfo info : AlbumBase.mSelectInfo) {
-            int index = info.getmPosition();
-            if (index > AlbumBase.mMedIndex) {
-                info.setmPosition(--index);
-            }
         }
     }
 
@@ -225,15 +184,9 @@ public class PreviewActivity extends AppCompatActivity implements OnClickListene
             container.removeView((View) object);
         }
 
-        @Override
-        public void notifyDataSetChanged() {
-            System.out.println("notifyDataSetChanged--" );
-            super.notifyDataSetChanged();
-        }
 
         @Override
         public Object instantiateItem(ViewGroup container, int position) {
-            System.out.println("instantiateItem--" + position);
             ZoomableDraweeView view = new ZoomableDraweeView(container.getContext());
             ImageRequest imageRequest = ImageRequestBuilder.newBuilderWithSource(Uri.parse("file://" + mPhotoInfoList.get(position).getPath())).setAutoRotateEnabled(true).build();
             view.setController(Fresco.newDraweeControllerBuilder().setImageRequest(imageRequest)
@@ -247,14 +200,6 @@ public class PreviewActivity extends AppCompatActivity implements OnClickListene
             container.addView(view, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
             return view;
         }
-//        @Override
-//        public int getItemPosition(Object object)   {
-//            if ( mChildCount > 0) {
-//                mChildCount --;
-//                return POSITION_NONE;
-//            }
-//            return super.getItemPosition(object);
-//        }
     }
 
 }
