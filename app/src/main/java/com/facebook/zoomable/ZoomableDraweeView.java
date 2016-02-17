@@ -19,6 +19,7 @@ import android.graphics.RectF;
 import android.graphics.drawable.Animatable;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
+import android.view.GestureDetector;
 import android.view.MotionEvent;
 
 import com.facebook.common.internal.Preconditions;
@@ -37,7 +38,7 @@ import com.facebook.drawee.view.DraweeView;
  * Once the image loads, pinch-to-zoom and translation gestures are enabled.
  */
 public class ZoomableDraweeView extends DraweeView<GenericDraweeHierarchy>
-        implements ZoomableController.Listener {
+        implements ZoomableController.Listener, GestureDetector.OnDoubleTapListener {
 
     private static final Class<?> TAG = ZoomableDraweeView.class;
 
@@ -45,7 +46,7 @@ public class ZoomableDraweeView extends DraweeView<GenericDraweeHierarchy>
 
     private final RectF mImageBounds = new RectF();
     private final RectF mViewBounds = new RectF();
-
+    private GestureDetector mGestureDetector;
     private final ControllerListener mControllerListener = new BaseControllerListener<Object>() {
         @Override
         public void onFinalImageSet(
@@ -66,20 +67,24 @@ public class ZoomableDraweeView extends DraweeView<GenericDraweeHierarchy>
 
     public ZoomableDraweeView(Context context) {
         super(context);
-        init();
+        init(context);
     }
 
     public ZoomableDraweeView(Context context, AttributeSet attrs) {
         super(context, attrs);
-        init();
+        init(context);
     }
 
     public ZoomableDraweeView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
-        init();
+        init(context);
     }
 
-    private void init() {
+    private void init(Context context) {
+        mGestureDetector = new GestureDetector(context, new GestureDetector.SimpleOnGestureListener() {
+
+        });
+        mGestureDetector.setOnDoubleTapListener(this);
         mZoomableController.setListener(this);
     }
 
@@ -201,5 +206,20 @@ public class ZoomableDraweeView extends DraweeView<GenericDraweeHierarchy>
                 this.hashCode(),
                 mViewBounds,
                 mImageBounds);
+    }
+
+    @Override
+    public boolean onSingleTapConfirmed(MotionEvent e) {
+        return false;
+    }
+
+    @Override
+    public boolean onDoubleTap(MotionEvent e) {
+        return false;
+    }
+
+    @Override
+    public boolean onDoubleTapEvent(MotionEvent e) {
+        return false;
     }
 }

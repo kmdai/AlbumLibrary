@@ -34,11 +34,21 @@ public class DefaultZoomableController
     private boolean mIsRotationEnabled = false;
     private boolean mIsScaleEnabled = true;
     private boolean mIsTranslationEnabled = true;
-
-    private float mMinScaleFactor = 1.0f;
-    private float mMaxScaleFactor = Float.POSITIVE_INFINITY;
-
+    /**
+     * 最小缩放比例
+     */
+    private float mMinScaleFactor = 0.8f;
+    /**
+     * 最大缩放比例
+     */
+    private float mMaxScaleFactor = 3.0f;
+    /**
+     * view边界
+     */
     private final RectF mViewBounds = new RectF();
+    /**
+     * 图像边界
+     */
     private final RectF mImageBounds = new RectF();
     private final RectF mTransformedImageBounds = new RectF();
     private final Matrix mPreviousTransform = new Matrix();
@@ -169,7 +179,7 @@ public class DefaultZoomableController
 
     /**
      * Sets the minimum scale factor allowed.
-     * <p>
+     * <p/>
      * Note that the hierarchy performs scaling as well, which
      * is not accounted here, so the actual scale factor may differ.
      */
@@ -186,7 +196,7 @@ public class DefaultZoomableController
 
     /**
      * Sets the maximum scale factor allowed.
-     * <p>
+     * <p/>
      * Note that the hierarchy performs scaling as well, which
      * is not accounted here, so the actual scale factor may differ.
      */
@@ -272,12 +282,50 @@ public class DefaultZoomableController
         mActiveTransform.set(activeTransform);
     }
 
+    private float mStartX;
+    private float mEndX;
+
     /**
      * Notifies controller of the received touch event.
      */
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         if (mIsEnabled) {
+//            switch (event.getAction()) {
+//                case MotionEvent.ACTION_DOWN:
+//                    mStartX = event.getX();
+//                case MotionEvent.ACTION_MOVE:
+//                    mEndX = event.getX();
+//                    if (mStartX - mEndX > 0) {
+//                        if (Math.abs(mViewBounds.right - mTransformedImageBounds.right) < 2 && getScaleFactor() > 1) {
+//                            return false;
+//                        }
+//
+//                    } else {
+//                        if (Math.abs(mViewBounds.left - mTransformedImageBounds.left) < 2 && getScaleFactor() > 1) {
+//                            return false;
+//                        }
+//                    }
+//                    mEndX = mStartX;
+//                    break;
+//                case MotionEvent.ACTION_UP:
+//                    mStartX = mEndX = 0;
+//                    break;
+//            }
+//            if (getScaleFactor() > 1) {
+//                System.out.println(mTranslationX);
+//                if (mTranslationX < 0 && Math.abs(mViewBounds.right - mTransformedImageBounds.right) < 5) {
+//                    mTranslationX = 0;
+//                    return false;
+//                }
+//                if (mTranslationX > 0 && Math.abs(mViewBounds.left - mTransformedImageBounds.left) < 5) {
+//                    mTranslationX = 0;
+//                    return false;
+//                }
+//            }
+//            if (getScaleFactor() <= 1) {
+//                return false;
+//            }
             return mGestureDetector.onTouchEvent(event);
         }
         return false;
@@ -285,7 +333,7 @@ public class DefaultZoomableController
 
     /**
      * Zooms to the desired scale and positions the view so that imagePoint is in the center.
-     * <p>
+     * <p/>
      * It might not be possible to center imagePoint (= a corner for e.g.), in those cases the view
      * will be adjusted so that there are no black bars in it.
      * Resets any previous transform and cancels the current gesture if one is happening.
@@ -316,6 +364,8 @@ public class DefaultZoomableController
         mPreviousTransform.set(mActiveTransform);
     }
 
+    private float mTranslationX;
+
     @Override
     public void onGestureUpdate(TransformGestureDetector detector) {
         mActiveTransform.set(mPreviousTransform);
@@ -329,6 +379,7 @@ public class DefaultZoomableController
         }
         limitScale(detector.getPivotX(), detector.getPivotY());
         if (mIsTranslationEnabled) {
+            mTranslationX = detector.getTranslationX();
             mActiveTransform.postTranslate(detector.getTranslationX(), detector.getTranslationY());
         }
         if (limitTranslation()) {

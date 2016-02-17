@@ -30,6 +30,14 @@ public class AlbumBase {
      * 中间值
      */
     public static int MED_INDEX;
+    /**
+     * 最多选择多少张图片
+     */
+    public static int MAX_SELECT = -1;
+    /**
+     * 单张图片的大小
+     */
+    public static int MAX_SIZE = -1;
 
     public static void initialize() {
         PHOTO_INFO = new ArrayList<>();
@@ -38,7 +46,7 @@ public class AlbumBase {
 
     public static void selectInit(@NonNull ArrayList<PhotoInfo> infos) {
         if (SELECT_INFO == null) {
-            throw new NullPointerException("AlbumBase bot initialize!!!");
+            throw new NullPointerException("AlbumBase not initialize!!!");
         }
         SELECT_INFO.clear();
         SELECT_INFO.addAll(infos);
